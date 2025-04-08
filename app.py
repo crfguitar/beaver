@@ -67,6 +67,17 @@ def beaverify(text, mode="Casual Naturalist"):
         "sound": "timbercore frequency",
     }
 
+    bbq_map = {
+        "pork ribs": "premium gnaw bones",
+        "pork": "birch bark strips",
+        "ribs": "gnaw bones",
+        "beans": "swamp legumes",
+        "barbecue": "smoke-dried alder mash",
+        "brisket": "oak slab roast",
+        "sandwich": "mosswich",
+        "spaghetti": "stringy vine pasta",
+    }
+
     idioms = [
         "You can't dam a feeling.",
         "Chew fast, chew true.",
@@ -74,26 +85,33 @@ def beaverify(text, mode="Casual Naturalist"):
         "He who gathers twigs early gnaws longest.",
     ]
 
+    # Combine maps based on mode
     if mode == "Beaver Gospel":
-        wordmap = {**base_map, **gospel_additions}
+        wordmap = {**base_map, **gospel_additions, **bbq_map}
     elif mode == "DAMaged Chaos":
-        wordmap = {**base_map, **chaos_additions}
+        wordmap = {**base_map, **chaos_additions, **bbq_map}
     else:
-        wordmap = base_map
+        wordmap = {**base_map, **bbq_map}
 
-    for key, val in wordmap.items():
+    # Priority: longest words first (avoid partial overlaps like 'pork ribs' before 'pork')
+    for key in sorted(wordmap, key=len, reverse=True):
+        val = wordmap[key]
         text = text.replace(f" {key} ", f" {val} ")
 
+    # Add beaver idioms if not in Casual
     if mode != "Casual Naturalist":
         text += "\n\n" + "\n".join(random.sample(idioms, k=2))
 
+    # Bonus Fact!
     text += "\n\nBonus Beaver Fact: " + random.choice([
         "Beavers slap their tails to warn others of danger.",
         "Beaver teeth are orange due to iron content.",
         "Beavers hate the sound of running water — they'll try to dam it.",
         "Beaver lodges have underwater entrances and cozy dens.",
     ])
+
     return text
+
 
 st.title("Whisper: Beaver Edition")
 st.write("Upload a song or voice recording, and this app will gently (or chaotically) rewrite it to be about beavers.")
