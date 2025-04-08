@@ -4,6 +4,7 @@ import tempfile
 import os
 import random
 from pydub import AudioSegment
+import wave
 
 st.set_page_config(page_title="Whisper: Beaver Edition")
 
@@ -20,10 +21,22 @@ def transcribe_with_whisper_api(audio_path):
         raise Exception(f"Whisper API error: {response.status_code}\n{response.text}")
     return response.json().get("text", "")
 
-def trim_audio(input_path, output_path, duration_ms=60000):
-    audio = AudioSegment.from_file(input_path)
-    trimmed = audio[:duration_ms]
-    trimmed.export(output_path, format="wav")
+def trim_wav_raw(input_path, output_path, max_duration_sec=20):
+    with wave.open(input_path, "rb") as wf:
+        framerate = wf.getframerate()
+        n_channels = wf.getnchannels()
+        sampwidth = wf.getsampwidth()
+        max_frames = int(framerate * max_duration_sec)
+
+        params = wf.getparams()
+        frames = wf.readframes(max_frames)
+
+    with wave.open(output_path, "wb") as out_wav:
+        out_wav.setnchannels(n_channels)
+        out_wav.setsampwidth(sampwidth)
+        out_wav.setframerate(framerate)
+        out_wav.writeframes(frames)
+
 
 def beaverify(text, mode="Casual Naturalist"):
     base_map = {
@@ -102,7 +115,7 @@ if uploaded_file is not None:
         if file_size_mb > MAX_MB:
             st.warning("File exceeds Hugging Face API size limit. Trimming to first 60 seconds...")
             trimmed_path = tmp_path.replace(".wav", "_trimmed.wav")
-            trim_audio(tmp_path, trimmed_path)
+            trim_wav_raw(tmp_path, trimmed_path)
             os.remove(tmp_path)
             tmp_path = trimmed_path
 
